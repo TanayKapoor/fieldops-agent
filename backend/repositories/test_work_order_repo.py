@@ -11,17 +11,17 @@ def check(label: str, condition: bool) -> None:
 def main():
     repo.load("backend/work_orders.json")
 
-    check("current_user().name", repo.current_user().name == "Alex Rivera")
+    check("current_user().name", repo.current_user().name == "Ravi Kumar")
     all_wos = repo.get_all()
-    check("get_all() length", len(all_wos) == 2)
+    check("get_all() length", len(all_wos) == 10)
 
     wo = repo.get("WO-001")
     check("get() found", wo is not None)
     check("notes starts empty", wo.notes == [])
     check("escalated starts False", wo.escalated is False)
 
-    repo.update_status("WO-001", "In Progress")
-    check("update_status applied", repo.get("WO-001").status == "In Progress")
+    repo.update_status("WO-001", "On Hold")
+    check("update_status applied", repo.get("WO-001").status == "On Hold")
 
     repo.add_note("WO-001", "Started work")
     check("add_note appended", len(repo.get("WO-001").notes) == 1)
