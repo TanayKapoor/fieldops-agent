@@ -1,17 +1,16 @@
-"""Section parsing + weighted keyword scoring (grounding).
+"""Score a user's question against knowledge.md's sections and decide whether
+the assistant is allowed to answer from it.
 
-Parses knowledge.md into its ##-headed sections at import time, then scores
-free-text queries against those sections by summed IDF-weight of overlapping
-keywords. Pure function, zero LLM/API dependency — testable standalone.
+Pure function, no LLM/API calls, no dependency on work_order_repo.py or any
+other layer — fully testable standalone.
 
-conversation_service.py calls search() and decides what to inject into the
-prompt based on the result. On no-match (score below threshold), the caller
-must NOT pass any section text into the prompt — pass an explicit NO_MATCH
-marker/instruction instead, so the model is structurally forced to say
-"not covered," rather than merely told to.
+CRITICAL DOWNSTREAM CONTRACT: when search() returns (None, score), the caller
+(conversation_service.py) must pass NO section text into the LLM prompt —
+only an explicit NO_MATCH instruction. A low-score section must never be
+passed through "just in case." This module only returns the signal; it does
+not and cannot enforce that the caller honors it.
 """
 
-import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,12 +24,13 @@ _STOPWORDS = {
     "to", "of", "in", "on", "at", "by", "for", "with", "and", "or", "if",
     "it", "its", "this", "that", "these", "those", "do", "does", "did",
     "not", "no", "you", "your", "i", "we", "should", "must", "can", "will",
+    "what", "who", "how", "someone", "else",
 }
 
 
 @dataclass(frozen=True)
 class Section:
-    title: str
+    heading: str
     body: str
     keywords: frozenset[str]
 
@@ -41,37 +41,48 @@ def _tokenize(text: str) -> set[str]:
 
 
 def _parse_sections(text: str) -> list[Section]:
-    # split on level-2 headers ("## ..."); ignore preamble before the first one
+    # split on level-2 headings ("## 1. Unit Reset Procedure..."); text before
+    # the first heading (title, intro) is discarded
     chunks = re.split(r"^## +(.+)$", text, flags=re.MULTILINE)[1:]
     sections = []
-    for title, body in zip(chunks[0::2], chunks[1::2]):
+    for heading, body in zip(chunks[0::2], chunks[1::2]):
+        heading = heading.strip()
         body = body.strip()
-        sections.append(Section(title=title.strip(), body=body, keywords=frozenset(_tokenize(f"{title} {body}"))))
+        keywords = frozenset(_tokenize(f"{heading} {body}"))
+        sections.append(Section(heading=heading, body=body, keywords=keywords))
     return sections
 
 
-def _build_idf(sections: list[Section]) -> dict[str, float]:
-    n = len(sections)
+def _build_doc_freq(sections: list[Section]) -> dict[str, int]:
     doc_freq: dict[str, int] = {}
     for section in sections:
         for kw in section.keywords:
             doc_freq[kw] = doc_freq.get(kw, 0) + 1
-    # +1 smoothing so a keyword in every section still gets a small positive weight
-    return {kw: math.log((n + 1) / (df + 1)) + 1 for kw, df in doc_freq.items()}
+    return doc_freq
 
 
 _SECTIONS = _parse_sections(_KNOWLEDGE_PATH.read_text())
-_IDF = _build_idf(_SECTIONS)
+_DOC_FREQ = _build_doc_freq(_SECTIONS)
+_NUM_SECTIONS = len(_SECTIONS)
+
+
+def _idf(term: str) -> float:
+    df = _DOC_FREQ.get(term, 0)
+    if df == 0:
+        return 0.0
+    return _NUM_SECTIONS / df
 
 
 def search(query: str) -> tuple[Section | None, float]:
+    """Returns (best_matching_section, score).
+    If no section clears the threshold, returns (None, best_score_seen)."""
     query_tokens = _tokenize(query)
     best_section: Section | None = None
     best_score = 0.0
 
     for section in _SECTIONS:
         overlap = query_tokens & section.keywords
-        score = sum(_IDF.get(kw, 0.0) for kw in overlap)
+        score = sum(_idf(term) for term in overlap)
         if score > best_score:
             best_section = section
             best_score = score
