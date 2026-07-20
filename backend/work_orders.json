@@ -1,1 +1,27 @@
-[]
+{
+  "currentUser": {
+    "id": "U-001",
+    "name": "Alex Rivera",
+    "role": "Technician"
+  },
+  "workOrders": [
+    {
+      "id": "WO-001",
+      "title": "Replace HVAC filter",
+      "assetType": "HVAC Unit",
+      "assignedTech": "Alex Rivera",
+      "status": "Open",
+      "dueDate": "2026-07-25",
+      "steps": ["Power down unit", "Remove old filter", "Install new filter", "Power on and verify"]
+    },
+    {
+      "id": "WO-002",
+      "title": "Inspect conveyor belt tension",
+      "assetType": "Conveyor",
+      "assignedTech": "Jordan Lee",
+      "status": "In Progress",
+      "dueDate": "2026-07-22",
+      "steps": ["Check tension gauge", "Adjust if out of range", "Log reading"]
+    }
+  ]
+}
