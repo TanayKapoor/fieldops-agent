@@ -72,6 +72,16 @@ def main():
     r = validate_tool_call("get_work_order", {"id": 123}, RAVI, get_work_order)
     check("wrong-typed id -> malformed", not r.ok and r.error_kind == "malformed")
 
+    # malformed envelope: unhashable tool_name, args not a dict
+    r = validate_tool_call(["get_work_order"], {"id": "WO-001"}, RAVI, get_work_order)
+    check("unhashable tool_name -> malformed", not r.ok and r.error_kind == "malformed")
+
+    r = validate_tool_call("get_work_order", ["WO-001"], RAVI, get_work_order)
+    check("args not a dict -> malformed", not r.ok and r.error_kind == "malformed")
+
+    r = validate_tool_call("get_work_order", None, RAVI, get_work_order)
+    check("args is None -> malformed", not r.ok and r.error_kind == "malformed")
+
     print("ok")
 
 

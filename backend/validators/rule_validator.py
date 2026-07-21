@@ -56,6 +56,9 @@ def validate_tool_call(
     current_user: CurrentUser,
     get_work_order_fn: Callable[[str], Optional[WorkOrder]],
 ) -> ValidationResult:
+    if not isinstance(tool_name, str) or not isinstance(args, dict):
+        return _malformed("Malformed tool call: tool_name must be a string and args must be an object")
+
     if tool_name not in _REQUIRED_ARGS:
         return _malformed(f"Unknown tool: {tool_name!r}")
 
