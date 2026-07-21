@@ -21,8 +21,8 @@ _WORK_ORDERS = {
 }
 
 
-def get_work_order(id: str):
-    return _WORK_ORDERS.get(id)
+def get_work_order(wo_id: str):
+    return _WORK_ORDERS.get(wo_id)
 
 
 def check(label: str, condition: bool) -> None:
@@ -83,6 +83,10 @@ def main():
     check("args is None -> malformed", not r.ok and r.error_kind == "malformed")
 
     print("ok")
+
+
+def test_rule_validator():
+    main()
 
 
 if __name__ == "__main__":
