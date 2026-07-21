@@ -21,3 +21,8 @@ def chat(req: ChatRequest) -> ChatResponse:
 @router.get("/work-orders")
 def list_work_orders():
     return work_order_repo.get_all()
+
+
+@router.get("/me")
+def me():
+    return work_order_repo.current_user()

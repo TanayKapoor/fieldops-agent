@@ -16,16 +16,23 @@ type WorkOrder = {
   status: string;
 };
 
-function buildGreeting(workOrders: WorkOrder[]): string {
+type CurrentUser = {
+  id: string;
+  name: string;
+  role: string;
+};
+
+function buildGreeting(user: CurrentUser, workOrders: WorkOrder[]): string {
+  const who = `You're signed in as **${user.name}** (\`${user.id}\`, ${user.role}).`;
   if (workOrders.length === 0) {
-    return "You have no work orders assigned right now.";
+    return `${who} You have no work orders assigned right now.`;
   }
   const open = workOrders.filter((wo) => wo.status !== "Completed");
   if (open.length === 0) {
-    return `You have ${workOrders.length} work orders, all completed.`;
+    return `${who} You have ${workOrders.length} work orders, all completed.`;
   }
   const ids = open.map((wo) => wo.id).join(", ");
-  return `You have ${open.length} open work order${open.length === 1 ? "" : "s"}: ${ids}`;
+  return `${who} You have ${open.length} open work order${open.length === 1 ? "" : "s"}: ${ids}`;
 }
 
 function App() {
@@ -35,11 +42,13 @@ function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/work-orders`)
-      .then((res) => res.json())
-      .then((workOrders: WorkOrder[]) => {
+    Promise.all([
+      fetch(`${API_BASE}/me`).then((res) => res.json()),
+      fetch(`${API_BASE}/work-orders`).then((res) => res.json()),
+    ])
+      .then(([user, workOrders]: [CurrentUser, WorkOrder[]]) => {
         setMessages((prev) =>
-          prev.length === 0 ? [{ role: "assistant", content: buildGreeting(workOrders) }] : prev
+          prev.length === 0 ? [{ role: "assistant", content: buildGreeting(user, workOrders) }] : prev
         );
       })
       .catch(() => {
