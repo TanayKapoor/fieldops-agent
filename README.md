@@ -41,7 +41,7 @@ set -a && source backend/.env && set +a
 .venv/bin/python -m uvicorn backend.main:app --port 8000
 ```
 
-The backend loads `backend/work_orders.json` once at startup — this is the seed data (work orders + current user). Changes made during a session (status updates, notes, escalations) are in-memory only and are lost on restart.
+`main.py` calls `work_order_repo.load()` once at startup, which reads `backend/work_orders.json` — this is the seed data (work orders + current user). `work_order_repo.py` is the only module that touches that file directly. Changes made during a session (status updates, notes, escalations) are in-memory only and are lost on restart.
 
 **2. Frontend**
 
@@ -90,7 +90,7 @@ Frontend has no automated tests; verify with `cd frontend && npx tsc -b && npm r
 
 ```
 backend/
-├── main.py                # FastAPI app entrypoint: CORS, load work_orders.json, mount router
+├── main.py                # FastAPI app entrypoint: CORS, wires up the repo at startup, mounts router
 ├── api/chat.py             # HTTP layer: POST /chat, GET /work-orders
 ├── services/
 │   ├── conversation_service.py  # orchestrates one turn: LLM -> validator -> repo loop
