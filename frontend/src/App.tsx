@@ -51,7 +51,7 @@ function App() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading]);
 
   async function sendMessage() {
     const trimmed = input.trim();
@@ -109,6 +109,15 @@ function App() {
             </div>
           </div>
         ))}
+        {loading && (
+          <div className="message-row assistant">
+            <div className="bubble typing-indicator" aria-label="Assistant is responding">
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
       <div className="input-row">
