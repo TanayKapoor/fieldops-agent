@@ -75,7 +75,7 @@
 
 .bubble th,
 .bubble td {
-  border: 1px solid currentColor;
+  border: 1px solid currentcolor;
   border-color: rgba(127, 127, 127, 0.4);
   padding: 4px 8px;
   text-align: left;

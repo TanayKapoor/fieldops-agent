@@ -8,8 +8,18 @@ Run: DEEPSEEK_API_KEY=... python -m backend.services.test_conversation_service
 """
 
 from backend.repositories import work_order_repo as repo
-from backend.services.conversation_service import handle_turn
+from backend.services.conversation_service import _TOOL_DISPATCH, handle_turn
 from backend.state import state
+from backend.validators.rule_validator import _REQUIRED_ARGS
+
+
+def test_tool_dispatch_matches_validator_registry():
+    """_TOOL_DISPATCH (conversation_service) and _REQUIRED_ARGS (rule_validator)
+    are maintained separately; if they drift, a tool could be dispatchable but
+    unvalidated; or validated but silently undispatchable."""
+    assert set(_TOOL_DISPATCH) == set(_REQUIRED_ARGS), (
+        f"tool name mismatch: dispatch={set(_TOOL_DISPATCH)} validator={set(_REQUIRED_ARGS)}"
+    )
 
 
 def reset_state():

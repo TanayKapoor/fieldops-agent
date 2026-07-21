@@ -46,4 +46,10 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-wait "$BACKEND_PID" "$FRONTEND_PID"
+# Poll instead of `wait -n` (bash 4.3+ only; macOS ships bash 3.2) so a
+# crash in either process is noticed promptly instead of sitting masked
+# behind the other still running; trap then tears down whichever peer
+# is left.
+while kill -0 "$BACKEND_PID" 2>/dev/null && kill -0 "$FRONTEND_PID" 2>/dev/null; do
+  sleep 1
+done
