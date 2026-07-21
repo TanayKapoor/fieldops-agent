@@ -1,1 +1,5 @@
 pydantic
+openai
+fastapi
+uvicorn
+httpx
